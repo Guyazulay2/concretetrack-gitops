@@ -1,0 +1,59 @@
+fullnameOverride: kps
+
+grafana:
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+  persistence:
+    enabled: true
+    storageClassName: local-path
+    size: 5Gi
+  defaultDashboardsTimezone: Asia/Jerusalem
+  grafana.ini:
+    server:
+      root_url: https://grafana.192-168-1-240.sslip.io
+    analytics:
+      reporting_enabled: false
+      check_for_updates: false
+    users:
+      allow_sign_up: false
+  sidecar:
+    dashboards:
+      searchNamespace: ALL
+
+prometheus:
+  prometheusSpec:
+    retention: 15d
+    retentionSize: 18GB
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    probeSelectorNilUsesHelmValues: false
+    resources:
+      requests: {cpu: 200m, memory: 1Gi}
+      limits: {memory: 3Gi}
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: [ReadWriteOnce]
+          resources: {requests: {storage: 20Gi}}
+
+alertmanager:
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: [ReadWriteOnce]
+          resources: {requests: {storage: 2Gi}}
+
+kubeControllerManager:
+  serviceMonitor: {https: true, insecureSkipVerify: true}
+kubeScheduler:
+  serviceMonitor: {https: true, insecureSkipVerify: true}
+kubeEtcd:
+  service: {port: 2381, targetPort: 2381}
+kubeProxy:
+  service: {port: 10249, targetPort: 10249}
