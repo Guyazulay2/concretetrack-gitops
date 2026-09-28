@@ -1,0 +1,8 @@
+crds:
+  enabled: true
+  keep: true            # helm uninstall לא ימחק את ה-CRDs (ואיתם את כל התעודות)
+
+config:
+  apiVersion: controller.config.cert-manager.io/v1alpha1
+  kind: ControllerConfiguration
+  enableGatewayAPI: true   # מאפשר להנפיק תעודות ישירות מתוך Gateway

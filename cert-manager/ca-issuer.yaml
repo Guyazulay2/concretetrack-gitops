@@ -1,0 +1,36 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-bootstrap
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: concretetrack-root-ca
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: ConcreteTrack Root CA
+  subject:
+    organizations: [ConcreteTrack]
+  secretName: concretetrack-root-ca
+  duration: 87600h
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Never
+  issuerRef:
+    name: selfsigned-bootstrap
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: concretetrack-ca
+spec:
+  ca:
+    secretName: concretetrack-root-ca
