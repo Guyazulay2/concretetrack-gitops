@@ -1,0 +1,42 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: concretetrack-db
+  namespace: concretetrack
+spec:
+  instances: 2
+  primaryUpdateStrategy: unsupervised
+  enableSuperuserAccess: false
+
+  bootstrap:
+    initdb:
+      database: concretetrack
+      owner: concretetrack
+      secret:
+        name: concretetrack-db-app
+
+  storage:
+    storageClass: local-path
+    size: 5Gi
+  walStorage:
+    storageClass: local-path
+    size: 2Gi
+
+  postgresql:
+    parameters:
+      max_connections: "100"
+      shared_buffers: "256MB"
+      effective_cache_size: "768MB"
+      log_min_duration_statement: "500"
+      timezone: "UTC"
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+  affinity:
+    enablePodAntiAffinity: true
+    podAntiAffinityType: preferred
