@@ -1,0 +1,4 @@
+# קלאסטר single-node: ה-control-plane הוא ה-node היחיד ולכן חייב להכריז על ה-LB IPs.
+# בקלאסטר עם workers - להסיר את זה, כדי שרק ה-workers יכריזו.
+speaker:
+  ignoreExcludeLB: true
