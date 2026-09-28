@@ -1,0 +1,14 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: ghcr-pull
+  namespace: concretetrack
+spec:
+  encryptedData:
+    .dockerconfigjson: AgCK/8E/CL5FE7x4VLSSFcybqdcnQdhod1GwWJAtlIPuvEp3K7jPBn0EqRGmYvvq1hLL07EJSDZCZ6j0k6c0fAgC2743ESjzJ/41OHBcL8fhubpv0PdeSu62oLkENqsQj1jbXb/5JSrRjKoecqbxFbS+gCc+J6o06q9CjAfIyiCXQEObt9h1E1VOa00Bg3DEhd3T3tJcdKaHBxm81EnLWNXiWINHkUswvFmiph3D+/KbDbrkibtUiKdaNh2fbBwxPMMRiJCsef/XM7PF9uYQPblpBqzy0hVflcPkuEE8vA94UlT3O4QDBTY2r+3Zy4Tg9vRMlJobxIuUkr8jOngqko5fPPCcJfN/aWIbeSPtkTIWos6xAJOSGtws2TopyuDy4rqGxit40AMmbyFtbf+CLi/VAJrgGFV9cBVmDbL2xfANXK1JtJweOoO+DsWX0jEmKWGJCzfcqWVCjA+sOz437+Jg/Fxcd92vRC2X5GG2A+S46/g9MyMz3XPXYms/h/ChlEyf+CsPF2xFs52XZ1skKX/kICtECV4Jsup2rgowap0vEJC2Bx8jBq5Uj9sqTFBAthEyusjaD9BlSzay2NePznzG/BjUvVyg5DlS+AWqOWhmJtqwT5AJSpECimPBeSl6byHJYfeULN+LaOgozU0atkBYa9SAgQOoNc5MBxbS7Ozsr8uCSQUrzRz6asYZBCr0E0yxtp07m8I5kNuavbgMlJnGr2Ix/1U9oWTOHMp8bV1CfHPgEG4/Yrob3fkTX5gKFacAk52iQKDV2SjoGEBs/kUsPsXT9t+XrJKfSIDEv0zj8qIKihjjKH/VnrK0T4QLWpNqqVRphRAT6ZktPgPcxuXEwgcyBbcyO2XxMftUmNoH53drE4ziWVQCuSvA4aGfjXo9r3znPLWnlnErmQ2swjn2SUvN4Kpx/fjLK70TiI5bbzCf4g==
+  template:
+    metadata:
+      name: ghcr-pull
+      namespace: concretetrack
+    type: kubernetes.io/dockerconfigjson
