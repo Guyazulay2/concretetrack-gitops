@@ -1,0 +1,99 @@
+{{- if and .Values.monitoring.enabled (.Capabilities.APIVersions.Has "monitoring.coreos.com/v1") }}
+# ---- איסוף מדדים מה-backend (/metrics) ----
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: concretetrack-backend
+  labels: {{- include "ct.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels: {app.kubernetes.io/name: concretetrack-backend}
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+---
+# ---- איסוף מדדים מ-PostgreSQL (exporter מובנה של CNPG, פורט 9187) ----
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ .Values.database.cluster }}
+  labels: {{- include "ct.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: {{ .Values.database.cluster }}
+      cnpg.io/podRole: instance
+  podMetricsEndpoints:
+    - port: metrics
+      interval: 30s
+---
+# ---- התראות ----
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: concretetrack
+  labels: {{- include "ct.labels" . | nindent 4 }}
+spec:
+  groups:
+    - name: concretetrack.app
+      rules:
+        - alert: ConcreteTrackBackendDown
+          expr: absent(up{namespace="{{ .Release.Namespace }}", service="concretetrack-backend"} == 1)
+          for: 2m
+          labels: {severity: critical}
+          annotations:
+            summary: "ה-backend של ConcreteTrack לא זמין"
+            description: "אף Pod של ה-backend לא עונה ל-Prometheus כבר 2 דקות."
+        - alert: ConcreteTrackHighErrorRate
+          expr: |
+            sum(rate(http_requests_total{namespace="{{ .Release.Namespace }}", status="5xx"}[5m]))
+              / sum(rate(http_requests_total{namespace="{{ .Release.Namespace }}"}[5m])) > 0.05
+          for: 5m
+          labels: {severity: warning}
+          annotations:
+            summary: "יותר מ-5% מהבקשות נכשלות (5xx)"
+            description: "{{ "{{" }} $value | humanizePercentage {{ "}}" }} מהבקשות מחזירות 5xx ב-5 הדקות האחרונות."
+        - alert: ConcreteTrackHighLatency
+          expr: |
+            histogram_quantile(0.95, sum by (le) (rate(http_request_duration_highr_seconds_bucket{namespace="{{ .Release.Namespace }}"}[5m]))) > 1
+          for: 10m
+          labels: {severity: warning}
+          annotations:
+            summary: "האפליקציה איטית (p95 > 1s)"
+            description: "95% מהבקשות לוקחות עד {{ "{{" }} $value | humanizeDuration {{ "}}" }}."
+    - name: concretetrack.database
+      rules:
+        - alert: ConcreteTrackDBInstanceDown
+          expr: count(cnpg_collector_up{namespace="{{ .Release.Namespace }}", cluster="{{ .Values.database.cluster }}"} == 1) < 2 or absent(cnpg_collector_up{namespace="{{ .Release.Namespace }}", cluster="{{ .Values.database.cluster }}"})
+          for: 2m
+          labels: {severity: critical}
+          annotations:
+            summary: "instance של PostgreSQL לא זמין"
+            description: "פחות מ-2 instances של {{ .Values.database.cluster }} תקינים - אין כרגע replica לגיבוי."
+        - alert: ConcreteTrackDBReplicationLag
+          expr: max(cnpg_pg_replication_lag{namespace="{{ .Release.Namespace }}", cluster="{{ .Values.database.cluster }}"}) > 30
+          for: 5m
+          labels: {severity: warning}
+          annotations:
+            summary: "ה-replica מפגר אחרי ה-primary"
+            description: "lag של {{ "{{" }} $value | humanizeDuration {{ "}}" }} - ב-failover עלול להיאבד מידע."
+        - alert: ConcreteTrackDBConnectionsHigh
+          expr: sum(cnpg_backends_total{namespace="{{ .Release.Namespace }}", cluster="{{ .Values.database.cluster }}"}) > 80
+          for: 5m
+          labels: {severity: warning}
+          annotations:
+            summary: "מספר חיבורים גבוה ל-DB"
+            description: "{{ "{{" }} $value {{ "}}" }} חיבורים פתוחים (max_connections=100)."
+---
+# ---- דשבורד Grafana (נטען אוטומטית ע"י ה-sidecar) ----
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: concretetrack-dashboard
+  labels: {{- include "ct.labels" . | nindent 4 }}
+    grafana_dashboard: "1"
+data:
+  concretetrack.json: |-
+{{ .Files.Get "dashboards/concretetrack.json" | indent 4 }}
+{{- end }}
