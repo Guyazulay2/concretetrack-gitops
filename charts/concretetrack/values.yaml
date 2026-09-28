@@ -1,0 +1,35 @@
+# ---- תמונות (התגית נקבעת בכל פריסה: --set image.tag=<git sha>) ----
+image:
+  registry: ghcr.io/guyazulay2
+  tag: ""
+  pullSecret: ghcr-pull
+
+host: concretetrack.192-168-1-240.sslip.io
+gateway:
+  name: main
+  namespace: gateway
+  sectionName: https
+
+database:
+  cluster: concretetrack-db          # שם ה-Cluster של CloudNativePG
+  name: concretetrack
+  credentialsSecret: concretetrack-db-app
+
+backend:
+  secretName: concretetrack-backend  # SealedSecret: JWT, סיסמאות ראשוניות, AWS
+  config:
+    AWS_REGION: eu-central-1
+    S3_BUCKET: concretetrack-media
+    CORS_ORIGINS: ""                 # אותו דומיין - אין צורך ב-CORS
+  replicas: 2
+  autoscaling: {min: 2, max: 5, cpu: 70}
+  resources:
+    requests: {cpu: 100m, memory: 256Mi}
+    limits: {memory: 512Mi}
+
+frontend:
+  replicas: 2
+  autoscaling: {min: 2, max: 4, cpu: 70}
+  resources:
+    requests: {cpu: 20m, memory: 32Mi}
+    limits: {memory: 128Mi}

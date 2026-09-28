@@ -1,0 +1,61 @@
+# 1. ברירת מחדל: אף אחד לא נכנס לשום Pod ב-namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  labels: {{- include "ct.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+---
+# 2. Envoy (ה-Gateway) -> backend + frontend
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gateway-to-web
+  labels: {{- include "ct.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values: [concretetrack-backend, concretetrack-frontend]
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: envoy-gateway-system}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: envoy}
+      ports:
+        - {port: 8000}
+        - {port: 8080}
+---
+# 3. DB: רק ה-backend, רפליקות ה-DB עצמן, והאופרטור של CNPG
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-db-access
+  labels: {{- include "ct.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels: {cnpg.io/cluster: {{ .Values.database.cluster }}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: {app.kubernetes.io/name: concretetrack-backend}
+      ports:
+        - {port: 5432}
+    - from:
+        - podSelector:
+            matchLabels: {cnpg.io/cluster: {{ .Values.database.cluster }}}
+      ports:
+        - {port: 5432}
+        - {port: 8000}
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: cnpg-system}
+      ports:
+        - {port: 8000}
+        - {port: 5432}

@@ -1,0 +1,89 @@
+{{- $name := "concretetrack-frontend" -}}
+{{- $sel := dict "app.kubernetes.io/name" $name -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels: {{- include "ct.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ $name }}
+spec:
+  replicas: {{ .Values.frontend.replicas }}
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels: {{- toYaml $sel | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxUnavailable: 0, maxSurge: 1}
+  template:
+    metadata:
+      labels: {{- include "ct.labels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ $name }}
+    spec:
+      {{- include "ct.podSecurity" . | nindent 6 }}
+        runAsUser: 101
+        runAsGroup: 101
+      imagePullSecrets: [{name: {{ .Values.image.pullSecret }}}]
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels: {{- toYaml $sel | nindent 14 }}
+      containers:
+        - name: frontend
+          image: "{{ .Values.image.registry }}/concretetrack-frontend:{{ required "image.tag is required" .Values.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - {name: http, containerPort: 8080}
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 5
+          lifecycle:
+            preStop:
+              sleep: {seconds: 5}
+          resources: {{- toYaml .Values.frontend.resources | nindent 12 }}
+          {{- include "ct.containerSecurity" . | nindent 10 }}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: tmp
+          emptyDir: {sizeLimit: 64Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels: {{- include "ct.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ $name }}
+spec:
+  selector: {{- toYaml $sel | nindent 4 }}
+  ports:
+    - {name: http, port: 80, targetPort: http}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $name }}
+  labels: {{- include "ct.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: {{ $name }}}
+  minReplicas: {{ .Values.frontend.autoscaling.min }}
+  maxReplicas: {{ .Values.frontend.autoscaling.max }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: {type: Utilization, averageUtilization: {{ .Values.frontend.autoscaling.cpu }}}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $name }}
+  labels: {{- include "ct.labels" . | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {{- toYaml $sel | nindent 6 }}
