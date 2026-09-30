@@ -1,4 +1,4 @@
 # ConcreteTrack - סביבת on-prem (kubeadm)
 # לפריסת גרסה חדשה: לעדכן את ה-tag ל-git sha של ה-image ב-GHCR
 image:
-  tag: "210bd79"
+  tag: "sha-087f68c"
