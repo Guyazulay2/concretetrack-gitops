@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: concretetrack-infra
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=true   # ה-operator של CNPG ממלא ברירות מחדל
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Guyazulay2/concretetrack-gitops.git
+    targetRevision: master
+    path: apps/concretetrack
+    directory:
+      recurse: true
+      exclude: 'values.yaml'   # זה values של ה-chart, לא מניפסט
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: concretetrack
+  syncPolicy:
+    syncOptions:
+      - ServerSideApply=true
