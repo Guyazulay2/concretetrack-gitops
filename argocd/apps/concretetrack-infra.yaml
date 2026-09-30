@@ -18,5 +18,8 @@ spec:
     server: https://kubernetes.default.svc
     namespace: concretetrack
   syncPolicy:
+    automated:
+      prune: false     # לעולם לא למחוק DB/secrets אוטומטית
+      selfHeal: true
     syncOptions:
       - ServerSideApply=true

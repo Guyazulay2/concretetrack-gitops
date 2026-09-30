@@ -24,5 +24,8 @@ spec:
       jsonPointers:
         - /spec/replicas
   syncPolicy:
+    automated:
+      prune: true      # משאב שנמחק מ-git יימחק מהקלאסטר
+      selfHeal: true   # שינוי ידני בקלאסטר יוחזר למה שב-git
     syncOptions:
       - RespectIgnoreDifferences=true

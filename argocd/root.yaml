@@ -1,0 +1,20 @@
+# app-of-apps: כל קובץ ב-argocd/apps/ הופך ל-Application
+# זה הקובץ היחיד שעושים לו kubectl apply ידני
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Guyazulay2/concretetrack-gitops.git
+    targetRevision: master
+    path: argocd/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: false     # מחיקת קובץ לא מוחקת Application (וכל מה שמתחתיו)
+      selfHeal: true
