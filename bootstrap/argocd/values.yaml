@@ -1,0 +1,10 @@
+# ArgoCD - מותקן ידנית (bootstrap), מנהל את כל השאר
+global:
+  domain: argocd.192-168-1-240.sslip.io
+
+configs:
+  params:
+    server.insecure: true   # TLS מסתיים ב-Gateway, בתוך הקלאסטר HTTP
+
+dex:
+  enabled: false            # בינתיים רק משתמש admin מקומי
