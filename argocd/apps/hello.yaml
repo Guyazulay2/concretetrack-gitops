@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: hello
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io   # מחיקת ה-Application מוחקת גם את המשאבים
+spec:
+  project: default
+  source:                                       # מאיפה
+    repoURL: https://github.com/Guyazulay2/concretetrack-gitops.git
+    targetRevision: master
+    path: apps/hello
+  destination:                                  # לאן
+    server: https://kubernetes.default.svc
+    namespace: hello
+  syncPolicy:                                   # איך
+    automated:
+      prune: true
+      selfHeal: true
